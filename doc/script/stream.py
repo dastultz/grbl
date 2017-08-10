@@ -73,10 +73,16 @@ parser.add_argument('-c','--check',action='store_true', default=False,
         help='stream in check mode')
 args = parser.parse_args()
 
+def write(value):
+    s.write(bytes(value, "utf-8"))
+
+def readline():
+    return s.readline().decode().strip()
+
 # Periodic timer to query for status reports
 # TODO: Need to track down why this doesn't restart consistently before a release.
 def send_status_query():
-    s.write('?')
+    write('?')
     
 def periodic_timer() :
     while is_run:
@@ -95,24 +101,26 @@ check_mode = False
 if args.check : check_mode = True
 
 # Wake up grbl
-print "Initializing Grbl..."
-s.write("\r\n\r\n")
+print("Initializing Grbl...")
+write("\r\n\r\n")
 
 # Wait for grbl to initialize and flush startup text in serial input
-time.sleep(2)
+time.sleep(10) # todo: this is lame, need to read boot message
 s.flushInput()
 
 if check_mode :
-    print "Enabling Grbl Check-Mode: SND: [$C]",
-    s.write("$C\n")
+    print("Enabling Grbl Check-Mode: SND: [$C]")
+    write("$C\n")
     while 1:
-        grbl_out = s.readline().strip() # Wait for grbl response with carriage return
+        grbl_out = readline() # Wait for grbl response with carriage return
+        if len(grbl_out) > 0:
+        	print(grbl_out)
         if grbl_out.find('error') >= 0 :
-            print "REC:",grbl_out
-            print "  Failed to set Grbl check-mode. Aborting..."
+            print("REC:", grbl_out)
+            print("  Failed to set Grbl check-mode. Aborting...")
             quit()
         elif grbl_out.find('ok') >= 0 :
-            if verbose: print 'REC:',grbl_out
+            if verbose: print('REC:', grbl_out)
             break
 
 start_time = time.time();
@@ -129,24 +137,24 @@ error_count = 0
 if settings_mode:
     # Send settings file via simple call-response streaming method. Settings must be streamed
     # in this manner since the EEPROM accessing cycles shut-off the serial interrupt.
-    print "SETTINGS MODE: Streaming", args.gcode_file.name, " to ", args.device_file
+    print("SETTINGS MODE: Streaming", args.gcode_file.name, " to ", args.device_file)
     for line in f:
         l_count += 1 # Iterate line counter    
         # l_block = re.sub('\s|\(.*?\)','',line).upper() # Strip comments/spaces/new line and capitalize
         l_block = line.strip() # Strip all EOL characters for consistency
-        if verbose: print "SND>"+str(l_count)+": \"" + l_block + "\""
-        s.write(l_block + '\n') # Send g-code block to grbl
+        if verbose: print("SND>" + str(l_count) + ": \"" + l_block + "\"")
+        write(l_block + '\n') # Send g-code block to grbl
         while 1:
-            grbl_out = s.readline().strip() # Wait for grbl response with carriage return
+            grbl_out = readline() # Wait for grbl response with carriage return
             if grbl_out.find('ok') >= 0 :
-                if verbose: print "  REC<"+str(l_count)+": \""+grbl_out+"\""
+                if verbose: print("  REC<"+str(l_count)+": \""+grbl_out+"\"")
                 break
             elif grbl_out.find('error') >= 0 :
-                if verbose: print "  REC<"+str(l_count)+": \""+grbl_out+"\""
+                if verbose: print("  REC<"+str(l_count)+": \""+grbl_out+"\"")
                 error_count += 1
                 break
             else:
-                print "    MSG: \""+grbl_out+"\""
+                print("    MSG: \""+grbl_out+"\"")
 else:    
     # Send g-code program via a more agressive streaming protocol that forces characters into
     # Grbl's serial read buffer to ensure Grbl has immediate access to the next g-code command
@@ -162,40 +170,40 @@ else:
         c_line.append(len(l_block)+1) # Track number of characters in grbl serial read buffer
         grbl_out = '' 
         while sum(c_line) >= RX_BUFFER_SIZE-1 | s.inWaiting() :
-            out_temp = s.readline().strip() # Wait for grbl response
+            out_temp = readline() # Wait for grbl response
             if out_temp.find('ok') < 0 and out_temp.find('error') < 0 :
-                print "    MSG: \""+out_temp+"\"" # Debug response
+                print("    MSG: \"" + out_temp + "\"") # Debug response
             else :
                 if out_temp.find('error') >= 0 : error_count += 1
                 g_count += 1 # Iterate g-code counter
-                if verbose: print "  REC<"+str(g_count)+": \""+out_temp+"\""
+                if verbose: print("  REC<" + str(g_count) + ": \"" + out_temp + "\"")
                 del c_line[0] # Delete the block character count corresponding to the last 'ok'
-        s.write(l_block + '\n') # Send g-code block to grbl
-        if verbose: print "SND>"+str(l_count)+": \"" + l_block + "\""
+        write(l_block + '\n') # Send g-code block to grbl
+        if verbose: print("SND>" + str(l_count) + ": \"" + l_block + "\"")
     # Wait until all responses have been received.
     while l_count > g_count :
-        out_temp = s.readline().strip() # Wait for grbl response
+        out_temp = readline() # Wait for grbl response
         if out_temp.find('ok') < 0 and out_temp.find('error') < 0 :
-            print "    MSG: \""+out_temp+"\"" # Debug response
+            print("    MSG: \"" + out_temp + "\"") # Debug response
         else :
             if out_temp.find('error') >= 0 : error_count += 1
             g_count += 1 # Iterate g-code counter
             del c_line[0] # Delete the block character count corresponding to the last 'ok'
-            if verbose: print "  REC<"+str(g_count)+": \""+out_temp + "\""
+            if verbose: print("  REC<" + str(g_count) + ": \"" + out_temp + "\"")
 
 # Wait for user input after streaming is completed
-print "\nG-code streaming finished!"
+print("\nG-code streaming finished!")
 end_time = time.time();
 is_run = False;
-print " Time elapsed: ",end_time-start_time,"\n"
+print(" Time elapsed: ", end_time-start_time, "\n")
 if check_mode :
     if error_count > 0 :
-        print "CHECK FAILED:",error_count,"errors found! See output for details.\n"
+        print("CHECK FAILED:", error_count, "errors found! See output for details.\n")
     else :
-        print "CHECK PASSED: No errors found in g-code program.\n"
+        print("CHECK PASSED: No errors found in g-code program.\n")
 else :
-   print "WARNING: Wait until Grbl completes buffered g-code blocks before exiting."
-   raw_input("  Press <Enter> to exit and disable Grbl.") 
+   print("WARNING: Wait until Grbl completes buffered g-code blocks before exiting.")
+   input("  Press <Enter> to exit and disable Grbl.")
 
 # Close file and serial port
 f.close()
