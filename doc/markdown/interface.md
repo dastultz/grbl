@@ -315,7 +315,7 @@ ok
 | **`131`** | Y-axis maximum travel, millimeters |
 | **`132`** | Z-axis maximum travel, millimeters |
 
-
+```
 - The other `$Nx=line` message is the print-out of a user-defined startup line, where `x` denotes the startup line order and ranges from `0` to `1` by default. The `line` denotes the startup line to be executed by Grbl upon reset or power-up, except during an ALARM.
 
   - When a user queries for the startup lines via a `$N` command, the following is sent by Grbl and completed by an `ok` response. The first line sets the initial startup work coordinate system to `G54`, while the second line is empty and does not execute.
