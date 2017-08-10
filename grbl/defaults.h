@@ -77,9 +77,9 @@
   #define DEFAULT_X_MAX_RATE 635.0 // mm/min (25 ipm)
   #define DEFAULT_Y_MAX_RATE 635.0 // mm/min
   #define DEFAULT_Z_MAX_RATE 635.0 // mm/min
-  #define DEFAULT_X_ACCELERATION (50.0*60*60) // 50*60*60 mm/min^2 = 50 mm/sec^2
-  #define DEFAULT_Y_ACCELERATION (50.0*60*60) // 50*60*60 mm/min^2 = 50 mm/sec^2
-  #define DEFAULT_Z_ACCELERATION (50.0*60*60) // 50*60*60 mm/min^2 = 50 mm/sec^2
+  #define DEFAULT_X_ACCELERATION (10.0*60*60) // 10*60*60 mm/min^2 = 10 mm/sec^2
+  #define DEFAULT_Y_ACCELERATION (10.0*60*60) // 10*60*60 mm/min^2 = 10 mm/sec^2
+  #define DEFAULT_Z_ACCELERATION (10.0*60*60) // 10*60*60 mm/min^2 = 10 mm/sec^2
   #define DEFAULT_X_MAX_TRAVEL 225.0 // mm NOTE: Must be a positive value.
   #define DEFAULT_Y_MAX_TRAVEL 125.0 // mm NOTE: Must be a positive value.
   #define DEFAULT_Z_MAX_TRAVEL 170.0 // mm NOTE: Must be a positive value.
@@ -92,7 +92,7 @@
   #define DEFAULT_STATUS_REPORT_MASK 1 // MPos enabled
   #define DEFAULT_JUNCTION_DEVIATION 0.01 // mm
   #define DEFAULT_ARC_TOLERANCE 0.002 // mm
-  #define DEFAULT_REPORT_INCHES 0 // true
+  #define DEFAULT_REPORT_INCHES 1 // true
   #define DEFAULT_INVERT_ST_ENABLE 0 // false
   #define DEFAULT_INVERT_LIMIT_PINS 0 // false
   #define DEFAULT_SOFT_LIMIT_ENABLE 0 // false
