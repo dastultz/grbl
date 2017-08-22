@@ -19,28 +19,8 @@ void ui_service() {
   loopCounter++;
   input_service();
 
-  for (uint8_t i = 0; i < 10; i++) {
-    if (input_edgeHigh(i)) {
-      printString("HIGH ");
-      print_uint8_base10(i);
-      printString(" ");
-      printInteger(input_edgeHigh(i));
-      printString("\r\n");
-      if (i < 7) output_setHigh(i);
-    }
-    if (input_edgeLow(i)) {
-      printString("LOW ");
-      print_uint8_base10(i);
-      printString(" ");
-      printInteger(input_edgeLow(i));
-      printString("\r\n");
-      if (i < 7) output_setLow(i);
-    }
-  }
+  // in discrete jog mode, pair lights with throttle position
   if (input_throttlePositionChanged()) {
-    printString("TH ");
-    print_uint8_base10(input_throttlePosition());
-    printString("\r\n");
     for (uint8_t i = 0; i < 6; i++) {
       output_setLow(i);
     }
@@ -60,7 +40,11 @@ void ui_handleJogButton() {
     // single-digit number and leading zeros
     uint8_t zeros = 0; // leading zeros
     char num = 0;
-    switch (5) { //input_throttlePosition()) {
+    // must capture in local variable first, if we don't
+    // the second of a double tap doesn't match switch statement
+    // don't know why
+    uint8_t tp = input_throttlePosition();
+    switch (tp) {
       case 0: zeros = 3; num = '5'; break; // 0.0005
       case 1: zeros = 2; num = '1'; break; // 0.001
       case 2: zeros = 2; num = '5'; break; // 0.005
@@ -68,20 +52,19 @@ void ui_handleJogButton() {
       case 4: zeros = 1; num = '2'; break; // 0.020
       case 5: zeros = 0; num = '1'; break; // 0.100
     }
-    // todo: do we need to handle button exclusivity?
-    if (input_edgeLow(BTN_IDX_UP)) {
+    if (input_edgeHigh(BTN_IDX_UP)) {
       axis = 'Z';
-    } else if (input_edgeLow(BTN_IDX_DN)) {
+    } else if (input_edgeHigh(BTN_IDX_DN)) {
       axis = 'Z';
       direction = '-';
-    } else if (input_edgeLow(BTN_IDX_LF)) {
+    } else if (input_edgeHigh(BTN_IDX_LF)) {
       axis = 'X';
       direction = '-';
-    } else if (input_edgeLow(BTN_IDX_RT)) {
+    } else if (input_edgeHigh(BTN_IDX_RT)) {
       axis = 'X';
-    } else if (input_edgeLow(BTN_IDX_IN)) {
+    } else if (input_edgeHigh(BTN_IDX_IN)) {
       axis = 'Y';
-    } else if (input_edgeLow(BTN_IDX_OT)) {
+    } else if (input_edgeHigh(BTN_IDX_OT)) {
       axis = 'Y';
       direction = '-';
     }
@@ -103,14 +86,9 @@ void ui_handleJogButton() {
       jogLineDiscrete[index] = '0'; index++;
 
       jogLineDiscrete[index] = 0; // zero terminated
-      printString(jogLineDiscrete);
-      printString("\r\n");
 
       uint8_t result = grbl_api_executeJog(jogLineDiscrete);
-
-      printString("J result ");
-      print_uint8_base10(result);
-      printString("\r\n");
+      // todo: if result != 0 start beep cycle
     }
   }
 }
