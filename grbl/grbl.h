@@ -60,6 +60,7 @@
 #include "spindle_control.h"
 #include "stepper.h"
 #include "jog.h"
+#include "user_interface.h"
 
 // ---------------------------------------------------------------------------------------
 // COMPILE-TIME ERROR CHECKING OF DEFINE VALUES:

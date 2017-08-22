@@ -149,6 +149,8 @@ void protocol_main_loop()
         }
 
       }
+      // kfmc: service user interface
+      ui_service();
     }
 
     // If there are no more characters in the serial read buffer to be processed and executed,
@@ -157,6 +159,10 @@ void protocol_main_loop()
     protocol_auto_cycle_start();
 
     protocol_execute_realtime();  // Runtime command check point.
+
+    // kfmc: service user interface
+    ui_service();
+
     if (sys.abort) { return; } // Bail to main() program loop to reset system.
   }
 
