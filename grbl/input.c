@@ -124,6 +124,13 @@ uint8_t input_throttlePosition() {
   return currentThrottlePosition;
 }
 
+uint8_t input_firstEdgeHighAxisButton() {
+  for (uint8_t i = 0; i < 6; i++) {
+    if (input_edgeHigh(i)) return i;
+  }
+  return 6;
+}
+
 void input_service() {
   // read digital inputs
   for (uint8_t i = 0; i < 10; i++) {

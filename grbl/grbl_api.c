@@ -48,20 +48,20 @@ void grbl_api_unpause() {
   system_set_exec_motion_override_flag(EXEC_CYCLE_START);
 }
 
-uint8_t grbl_api_idle() {
+int grbl_api_idle() {
   return sys.state == STATE_IDLE;
 }
 
-uint8_t grbl_api_jogging() {
+int grbl_api_jogging() {
   return sys.state == STATE_JOG;
 }
 
-uint8_t grbl_api_running() {
+int grbl_api_running() {
   return sys.state == STATE_CYCLE;
 }
 
-uint8_t grbl_api_holding() {
-  return sys.state == STATE_CYCLE;
+int grbl_api_holding() {
+  return sys.state == STATE_HOLD;
 }
 
 uint8_t grbl_api_executeJog(char *line) {
@@ -69,7 +69,7 @@ uint8_t grbl_api_executeJog(char *line) {
 }
 
 void grbl_api_cancelJog() {
-  if (sys.state & STATE_JOG) {
+  if (sys.state == STATE_JOG) {
     system_set_exec_state_flag(EXEC_MOTION_CANCEL);
   }
 }

@@ -14,4 +14,10 @@ void output_setHigh(uint8_t doutIndex);
 // turn pin off
 void output_setLow(uint8_t doutIndex);
 
+// turn on one light, all others out
+void output_exclusiveLightOn(uint8_t light);
+
+// turn all lights off
+void output_clearAllLights();
+
 #endif

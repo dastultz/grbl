@@ -88,5 +88,15 @@ void output_service() {
         break;
     }
   }
+}
 
+void output_exclusiveLightOn(uint8_t light) {
+  output_clearAllLights();
+  output_setHigh(light);
+}
+
+void output_clearAllLights() {
+  for (uint8_t i = 0; i < 6; i++) {
+    output_setLow(i);
+  }
 }

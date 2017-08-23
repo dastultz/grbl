@@ -28,13 +28,13 @@ void grbl_api_pause();
 
 void grbl_api_unpause();
 
-uint8_t grbl_api_idle();
+int grbl_api_idle();
 
-uint8_t grbl_api_jogging();
+int grbl_api_jogging();
 
-uint8_t grbl_api_running();
+int grbl_api_running();
 
-uint8_t grbl_api_holding();
+int grbl_api_holding();
 
 uint8_t grbl_api_executeJog();
 

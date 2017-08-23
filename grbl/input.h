@@ -25,4 +25,7 @@ int input_throttlePositionChanged();
 /// position of throttle 0 to 5
 uint8_t input_throttlePosition();
 
+// first pressed button, if any
+uint8_t input_firstPressedAxisButton();
+
 #endif
