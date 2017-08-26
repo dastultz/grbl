@@ -36,6 +36,8 @@ int grbl_api_running();
 
 int grbl_api_holding();
 
+int grbl_api_planner_full();
+
 uint8_t grbl_api_executeJog();
 
 void grbl_api_cancelJog();

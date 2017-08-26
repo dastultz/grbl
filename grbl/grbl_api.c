@@ -64,6 +64,10 @@ int grbl_api_holding() {
   return sys.state == STATE_HOLD;
 }
 
+int grbl_api_planner_full() {
+  return plan_check_full_buffer();
+}
+
 uint8_t grbl_api_executeJog(char *line) {
   return system_execute_line(line);
 }

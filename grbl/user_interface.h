@@ -15,14 +15,11 @@
 #define BTN_IDX_LM 8
 #define BTN_IDX_SP 9
 
-typedef struct {
-  char direction;
-  char axis;
-} ui_axisAction_t;
-
-
 // initialize user interface
 void ui_init();
+
+// null out the buffer before building new line
+void ui_clearJogCommand();
 
 // service the user interface (pot, buttons, lights)
 void ui_service();
@@ -46,6 +43,9 @@ void ui_handleContinuousJogStart();
 void ui_handleContinuousJogEnd();
 
 // axis button action taken
-ui_axisAction_t ui_pickAxisAction();
+void ui_initAxisAction();
+
+// send continuous jog move
+void ui_sendContinuousJog();
 
 #endif

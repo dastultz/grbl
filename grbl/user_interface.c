@@ -1,26 +1,29 @@
 #include "user_interface.h"
 
-// Jog lines to be executed. Zero-terminated.
-static char jogLineContinuous[20] = { "$J=G20G91X-100" };
-static char jogLineDiscrete[25] = { "$J=G20G91X-0.0005" };
-#define AXIS_INDEX 9
-#define SIGN_INDEX 10
+// G-Code fragments
+static char JOG[] = "$J=";
+static char G20[] = "G20";
+static char G21[] = "G21";
+static char G91[] = "G91";
+
+#define JOG_LENGTH 25
+static char jogCommand[JOG_LENGTH];
 
 // index of button mapped to axis properties
-char axisMap[] = "ZZXXYY";
-char directionMap[] = "+-+-+-";
+static char axisMap[] = "ZZXXYY";
+static char directionMap[] = "+--++-";
 
 #define MODE_DISCRETE 0
 #define MODE_CONTINUOUS 1
 uint8_t mode = MODE_CONTINUOUS;
+
+uint8_t activeContinuousButton = 0;
 
 unsigned long loopCounter;
 
 void ui_init() {
   input_init();
   output_init();
-  jogLineContinuous[14] = 0;
-  jogLineDiscrete[16] = 0;
 }
 
 void ui_service() {
@@ -39,11 +42,17 @@ void ui_service() {
         mode = MODE_CONTINUOUS;
         output_clearAllLights();
       }
-    } else {
-      ui_handleContinuousJogStart();
-      ui_handleContinuousJogEnd();
-      if (input_edgeHigh(BTN_IDX_TH)) {
-        mode = MODE_DISCRETE;
+    } else { // MODE_CONTINUOUS
+      if (grbl_api_jogging()) {
+        if (! grbl_api_planner_full()) {
+          ui_sendContinuousJog();
+        }
+        ui_handleContinuousJogEnd();
+      } else {
+        ui_handleContinuousJogStart();
+        if (input_edgeHigh(BTN_IDX_TH)) {
+          mode = MODE_DISCRETE;
+        }
       }
     }
   }
@@ -74,81 +83,110 @@ void ui_handleDiscreteJog() {
   // pair lights with throttle position
   output_exclusiveLightOn(input_throttlePosition());
 
-  // determine if jog button pressed
-  ui_axisAction_t action = ui_pickAxisAction();
+  ui_initAxisAction();
 
-  if (action.axis) {
-    // define distance in ten-thousandths of an inch with
-    // single-digit number and leading zeros
-    uint8_t zeros = 0; // leading zeros
-    char num = 0;
+  if (activeContinuousButton < 6) {
+    ui_clearJogCommand();
+    strcat(jogCommand, JOG);
+    strcat(jogCommand, G20); // inch
+    strcat(jogCommand, G91); // relative
+    jogCommand[strlen(jogCommand)] = axisMap[activeContinuousButton];
+    jogCommand[strlen(jogCommand)] = directionMap[activeContinuousButton];
+    strcat(jogCommand, "0.");
     // must capture in local variable first, if we don't
     // the second of a double tap doesn't match switch statement
     // don't know why
     uint8_t tp = input_throttlePosition();
     switch (tp) {
-      case 0: zeros = 3; num = '5'; break; // 0.0005
-      case 1: zeros = 2; num = '1'; break; // 0.001
-      case 2: zeros = 2; num = '5'; break; // 0.005
-      case 3: zeros = 1; num = '1'; break; // 0.010
-      case 4: zeros = 1; num = '2'; break; // 0.020
-      case 5: zeros = 0; num = '1'; break; // 0.100
+      case 0: strcat(jogCommand, "0005"); break;
+      case 1: strcat(jogCommand, "001"); break;
+      case 2: strcat(jogCommand, "005"); break;
+      case 3: strcat(jogCommand, "01"); break;
+      case 4: strcat(jogCommand, "02"); break;
+      case 5: strcat(jogCommand, "1"); break;
     }
-    jogLineDiscrete[AXIS_INDEX] = action.axis;
-    jogLineDiscrete[SIGN_INDEX] = action.direction;
-    uint8_t index = SIGN_INDEX + 1;
-    jogLineDiscrete[index] = '0'; index++;
-    jogLineDiscrete[index] = '.'; index++;
-    for (uint8_t i = 0; i < zeros; i++) {
-      jogLineDiscrete[index] = '0';
-      index++;
-    }
-    jogLineDiscrete[index] = num; index++;
-
     // Feed of 10 ipm
-    jogLineDiscrete[index] = 'F'; index++;
-    jogLineDiscrete[index] = '1'; index++;
-    jogLineDiscrete[index] = '0'; index++;
+    strcat(jogCommand, "F10");
 
-    jogLineDiscrete[index] = 0; // zero terminated
+    uint8_t result = grbl_api_executeJog(jogCommand);
 
-    uint8_t result = grbl_api_executeJog(jogLineDiscrete);
-
-    printString(jogLineDiscrete);
+    printString(jogCommand);
+    printString(":");
+    print_uint8_base10(result);
     printString("\r\n");
     // todo: if result != 0 start beep cycle
   }
 }
 
 void ui_handleContinuousJogStart() {
-  // todo: not if any other button pressed
-  // determine if jog button pressed
-  ui_axisAction_t action = ui_pickAxisAction();
+  ui_initAxisAction();
 
-  if (action.axis) {
+  if (activeContinuousButton < 6) {
+    ui_sendContinuousJog();
     printString("continuous start\r\n");
   }
 }
 
 void ui_handleContinuousJogEnd() {
-  // todo: track the current axis being moved, look for that button
-  // to be released
-  // determine if jog button released
-  ui_axisAction_t action = ui_pickAxisAction();
-
-  if (action.axis) {
+  if (input_edgeLow(activeContinuousButton)) {
+    grbl_api_cancelJog();
     printString("continuous end\r\n");
   }
 }
 
-ui_axisAction_t ui_pickAxisAction() {
-  ui_axisAction_t action;
-  action.axis = 0; // zero if nothing pressed
-  action.direction = 0;
+void ui_sendContinuousJog() {
+  ui_clearJogCommand();
+  strcat(jogCommand, JOG);
+  strcat(jogCommand, G21); // metric
+  strcat(jogCommand, G91); // relative
+  jogCommand[strlen(jogCommand)] = axisMap[activeContinuousButton];
+  jogCommand[strlen(jogCommand)] = directionMap[activeContinuousButton];
+  strcat(jogCommand, "0.0");
+  // must capture in local variable first, if we don't
+  // the second of a double tap doesn't match switch statement
+  // don't know why
+  uint8_t tp = input_throttlePosition();
+  // these numbers are fractions of a millimeter per move!
+  switch (tp) {
+    case 0: strcat(jogCommand, "056"); break;
+    case 1: strcat(jogCommand, "112"); break;
+    case 2: strcat(jogCommand, "282"); break;
+    case 3: strcat(jogCommand, "423"); break;
+    case 4: strcat(jogCommand, "564"); break;
+    case 5: strcat(jogCommand, "705"); break;
+  }
+  strcat(jogCommand, "F");
+  // these numbers are millimeters per minute!
+  switch (tp) {
+    case 0: strcat(jogCommand, "50"); break;
+    case 1: strcat(jogCommand, "101"); break;
+    case 2: strcat(jogCommand, "254"); break;
+    case 3: strcat(jogCommand, "381"); break;
+    case 4: strcat(jogCommand, "508"); break;
+    case 5: strcat(jogCommand, "635"); break;
+  }
+  uint8_t result = grbl_api_executeJog(jogCommand);
+
+  if (loopCounter % 3000 == 0) {
+    printString(jogCommand);
+    printString(":");
+    print_uint8_base10(result);
+    printString("\r\n");
+  }
+  // todo: if result != 0 start beep cycle
+}
+
+void ui_initAxisAction() {
   uint8_t pressedButton = input_firstEdgeHighAxisButton();
   if (pressedButton < 6) {
-    action.axis = axisMap[pressedButton];
-    action.direction = directionMap[pressedButton];
+    activeContinuousButton = pressedButton;
+  } else {
+    activeContinuousButton = 6;
   }
-  return action;
+}
+
+void ui_clearJogCommand() {
+  for (uint8_t i = 0; i < JOG_LENGTH; i++) {
+    jogCommand[i] = 0;
+  }
 }
