@@ -11,7 +11,6 @@
 #define PORT_NUM_D 3
 
 // throttle defines
-#define ANALOG_THROTTLE 7
 #define DTP_MIN 768 /* 0% */
 #define DTP_LSPLIT 682 /* 25% */
 #define DTP_USPLIT 352 /* 75% */
@@ -36,6 +35,10 @@ uint8_t debounceCounters[] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 uint8_t currentThrottlePosition = 0;
 uint8_t lastThrottlePosition = 0;
 uint8_t throttleDebounceCounter = 0;
+
+// over sample the throttle to smooth it out
+#define THROTTLE_SAMPLING 4
+uint16_t throttleSamples[THROTTLE_SAMPLING];
 
 void input_init() {
   // set up A/D converter for one input
@@ -90,6 +93,11 @@ void input_init() {
   buttonStates[BTN_IDX_ES] |= PC6 << 4;
   buttonStates[BTN_IDX_LM] |= PC7 << 4;
   buttonStates[BTN_IDX_SP] |= PA0 << 4;
+
+  // clear throttle buffer
+  for (uint8_t i = 0; i < THROTTLE_SAMPLING; i++) {
+    throttleSamples[i] = 768; // lowest position;
+  }
 
 }
 
@@ -176,10 +184,24 @@ void input_service() {
   if (throttleDebounceCounter > 0) {
     throttleDebounceCounter--;
   } else {
-    // read the last analog value
+    // read the last analog value converted, add to buffer
     int low = ADCL;
     int high = ADCH;
     int pot = (high << 8) | low;
+
+    // shift sampling buffer left
+    for (uint8_t i = 1; i < THROTTLE_SAMPLING; i++) {
+      throttleSamples[i - 1] = throttleSamples[i];
+    }
+    // add new value
+    throttleSamples[THROTTLE_SAMPLING - 1] = pot;
+
+    // take average
+    uint16_t total = 0;
+    for (uint8_t i = 0; i < THROTTLE_SAMPLING; i++) {
+      total += throttleSamples[i];
+    }
+    pot = total / THROTTLE_SAMPLING;
 
     // flatten the curve produced by throttle pot
     if (pot > DTP_LSPLIT) pot = map(pot, DTP_MIN, DTP_LSPLIT, 0, 30);
