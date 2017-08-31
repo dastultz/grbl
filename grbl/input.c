@@ -1,7 +1,5 @@
 #include "grbl.h"
 
-#define DEBOUNCE_INTERVAL 250
-
 #define DIN_STATE_CURR 0b001
 #define DIN_STATE_PREV 0b010
 
@@ -176,7 +174,7 @@ void input_service() {
 
     // start debounce counter for this input
     if (input_edgeHigh(i) || input_edgeLow(i)) {
-      debounceCounters[i] = DEBOUNCE_INTERVAL;
+      debounceCounters[i] = input_debounceInterval();
     }
 
   }
@@ -212,8 +210,15 @@ void input_service() {
     uint8_t newThrottlePosition = constrain(pot / 20, 0, 5);
     lastThrottlePosition = currentThrottlePosition;
     currentThrottlePosition = newThrottlePosition;
-    throttleDebounceCounter = DEBOUNCE_INTERVAL;
+    throttleDebounceCounter = input_debounceInterval();
   }
 
   sbi(ADCSRA, ADSC); // queue the next analog read
+}
+
+// if we're using the watchdog timer, 1 round is enough to debounce
+// main loop runs at ~20K but not when a cycle is running
+int input_debounceInterval() {
+  if (grbl_api_running() || grbl_api_holding()) return 1;
+  else return 250;
 }

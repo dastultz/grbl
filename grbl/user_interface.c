@@ -19,23 +19,42 @@ uint8_t mode = MODE_CONTINUOUS;
 
 uint8_t activeContinuousButton = 0;
 
-unsigned long loopCounter;
-
 void ui_init() {
   input_init();
   output_init();
+  ui_watchDogInit();
+}
+
+void ui_watchDogInit() {
+  // Clear reset, we can not clear WDE if WDRF is set
+  MCUSR &= ~(1<<WDRF);
+  cli(); // disable interrupts so we do not get interrupted while doing timed sequence
+  // First step of timed sequence, we have 4 cycles after this to make changes to WDE and WD timeout
+  WDTCSR |= (1<<WDCE) | (1<<WDE);
+  // disable reset mode and set prescaler in one operation
+  WDTCSR = 0; // 15ms timeout, about 66Hz
+  sei(); // enable global interrupts
+  WDTCSR |= _BV(WDIE); // enable watchdog interrupt only mode
+}
+
+// when running a cycle, this handles I/O
+ISR(WDT_vect) { // Watchdog timer ISR
+  if (grbl_api_running() || grbl_api_holding()) {
+    input_service();
+    ui_handleEStop();
+    if (grbl_api_running()) {
+      ui_handleOverride();
+      ui_handlePause();
+    } else if (grbl_api_holding()) {
+      ui_handleUnpause();
+    }
+    output_service();
+  }
 }
 
 void ui_service() {
-  loopCounter++;
-  input_service();
-
-  if (grbl_api_running()) {
-    ui_handleOverride();
-    ui_handlePause();
-  } else if (grbl_api_holding()) {
-    ui_handleUnpause();
-  } else if (grbl_api_idle() || grbl_api_jogging()) {
+  if (grbl_api_idle() || grbl_api_jogging()) {
+    input_service();
     if (mode == MODE_DISCRETE) {
       ui_handleDiscreteJog();
       if (input_edgeHigh(BTN_IDX_TH)) {
@@ -55,27 +74,40 @@ void ui_service() {
         }
       }
     }
+    output_service();
   }
+}
 
-  output_service();
+void ui_handleEStop() {
+  if (input_edgeHigh(BTN_IDX_ES)) {
+    mc_reset(); // todo: move this out to grbl_api
+  }
+  if (input_edgeLow(BTN_IDX_ES)) {
+    grbl_clear_alarm();
+  }
 }
 
 void ui_handleOverride() {
   uint8_t pressedButton = input_firstEdgeHighAxisButton();
-  if (pressedButton < 6) {
-    printString("override\r\n");
+  switch (pressedButton) {
+    case BTN_IDX_UP: grbl_api_feed_override_coarse_plus(); break;
+    case BTN_IDX_DN: grbl_api_feed_override_coarse_minus(); break;
+    case BTN_IDX_IN: grbl_api_feed_override_fine_plus(); break;
+    case BTN_IDX_OT: grbl_api_feed_override_fine_minus(); break;
+    case BTN_IDX_LF: grbl_api_rapid_override_minus(); break;
+    case BTN_IDX_RT: grbl_api_rapid_override_plus(); break;
   }
 }
 
 void ui_handlePause() {
   if (input_edgeHigh(BTN_IDX_TH)) {
-    printString("pause\r\n");
+    grbl_api_pause();
   }
 }
 
 void ui_handleUnpause() {
   if (input_edgeHigh(BTN_IDX_TH)) {
-    printString("unpause\r\n");
+    grbl_api_unpause();
   }
 }
 
@@ -123,14 +155,12 @@ void ui_handleContinuousJogStart() {
 
   if (activeContinuousButton < 6) {
     ui_sendContinuousJog();
-    printString("continuous start\r\n");
   }
 }
 
 void ui_handleContinuousJogEnd() {
   if (input_edgeLow(activeContinuousButton)) {
     grbl_api_cancelJog();
-    printString("continuous end\r\n");
   }
 }
 
@@ -167,12 +197,6 @@ void ui_sendContinuousJog() {
   }
   uint8_t result = grbl_api_executeJog(jogCommand);
 
-  if (loopCounter % 3000 == 0) {
-    printString(jogCommand);
-    printString(":");
-    print_uint8_base10(result);
-    printString("\r\n");
-  }
   // todo: if result != 0 start beep cycle
 }
 

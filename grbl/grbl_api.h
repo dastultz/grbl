@@ -20,9 +20,9 @@ void grbl_api_feed_override_fine_minus();
 
 void grbl_api_rapid_override_reset();
 
-void grbl_api_rapid_override_medium();
+void grbl_api_rapid_override_minus();
 
-void grbl_api_rapid_override_low();
+void grbl_api_rapid_override_plus();
 
 void grbl_api_pause();
 

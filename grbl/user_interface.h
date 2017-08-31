@@ -18,11 +18,16 @@
 // initialize user interface
 void ui_init();
 
-// null out the buffer before building new line
-void ui_clearJogCommand();
-
 // service the user interface (pot, buttons, lights)
 void ui_service();
+
+// initialize watchdog timer used for servicing inputs during cycle
+void ui_watchDogInit();
+
+void ui_handleEStop();
+
+// null out the buffer before building new line
+void ui_clearJogCommand();
 
 // issue feed/rapid override if requested
 void ui_handleOverride();

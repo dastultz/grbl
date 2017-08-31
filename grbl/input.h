@@ -9,6 +9,7 @@ void input_init();
 void input_service();
 
 // todo: is there a signed 8-bit type that will work for these boolean functions?
+// see plan_check_full_buffer
 
 // is the digital pin on
 int input_high(uint8_t dinIndex);
@@ -27,5 +28,7 @@ uint8_t input_throttlePosition();
 
 // first pressed button, if any
 uint8_t input_firstPressedAxisButton();
+
+int input_debounceInterval();
 
 #endif

@@ -2,10 +2,12 @@
 
 void grbl_api_e_stop() {
   mc_reset();
+  // todo: system_set_exec_alarm(EXEC_ALARM_HARD_LIMIT); ??
 }
 
 void grbl_clear_alarm() {
-
+  // todo: this does not reset UGS
+  system_clear_exec_alarm();
 }
 
 void grbl_api_feed_override_reset() {
@@ -32,20 +34,34 @@ void grbl_api_rapid_override_reset() {
   system_set_exec_motion_override_flag(EXEC_RAPID_OVR_RESET);
 }
 
-void grbl_api_rapid_override_medium() {
-  system_set_exec_motion_override_flag(EXEC_RAPID_OVR_MEDIUM);
+void grbl_api_rapid_override_minus() {
+  switch (sys.r_override) {
+    case DEFAULT_RAPID_OVERRIDE:
+      system_set_exec_motion_override_flag(EXEC_RAPID_OVR_MEDIUM);
+      break;
+    case RAPID_OVERRIDE_MEDIUM:
+      system_set_exec_motion_override_flag(EXEC_RAPID_OVR_LOW);
+      break;
+  }
 }
 
-void grbl_api_rapid_override_low() {
-  system_set_exec_motion_override_flag(EXEC_RAPID_OVR_LOW);
+void grbl_api_rapid_override_plus() {
+  switch (sys.r_override) {
+    case RAPID_OVERRIDE_MEDIUM:
+      system_set_exec_motion_override_flag(EXEC_RAPID_OVR_RESET);
+      break;
+    case RAPID_OVERRIDE_LOW:
+      system_set_exec_motion_override_flag(EXEC_RAPID_OVR_MEDIUM);
+      break;
+  }
 }
 
 void grbl_api_pause() {
-  system_set_exec_motion_override_flag(EXEC_FEED_HOLD);
+  system_set_exec_state_flag(EXEC_FEED_HOLD);
 }
 
 void grbl_api_unpause() {
-  system_set_exec_motion_override_flag(EXEC_CYCLE_START);
+  system_set_exec_state_flag(EXEC_CYCLE_START);
 }
 
 int grbl_api_idle() {
