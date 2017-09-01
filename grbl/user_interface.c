@@ -42,12 +42,14 @@ ISR(WDT_vect) { // Watchdog timer ISR
   if (grbl_api_running() || grbl_api_holding()) {
     input_service();
     ui_handleEStop();
+    ui_handleSpindleThermalShutdown();
     if (grbl_api_running()) {
       ui_handleOverride();
       ui_handlePause();
     } else if (grbl_api_holding()) {
       ui_handleUnpause();
     }
+    output_clearAllLights();
     output_service();
   }
 }
@@ -55,6 +57,7 @@ ISR(WDT_vect) { // Watchdog timer ISR
 void ui_service() {
   if (grbl_api_idle() || grbl_api_jogging()) {
     input_service();
+    ui_handleSpindleThermalShutdown();
     if (mode == MODE_DISCRETE) {
       ui_handleDiscreteJog();
       if (input_edgeHigh(BTN_IDX_TH)) {
@@ -85,6 +88,11 @@ void ui_handleEStop() {
   if (input_edgeLow(BTN_IDX_ES)) {
     grbl_clear_alarm();
   }
+}
+
+void ui_handleSpindleThermalShutdown() {
+  if (input_edgeHigh(BTN_IDX_SP)) output_setHigh(OUT_IDX_BZ);
+  if (input_edgeLow(BTN_IDX_SP)) output_setLow(OUT_IDX_BZ);
 }
 
 void ui_handleOverride() {

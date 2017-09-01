@@ -3,15 +3,6 @@
 #define DOUT_STATE 0b001
 #define DOUT_CHANGE 0b010
 
-// index into array of digital outputs
-#define OUT_IDX_UP 0
-#define OUT_IDX_DN 1
-#define OUT_IDX_LF 2
-#define OUT_IDX_RT 3
-#define OUT_IDX_IN 4
-#define OUT_IDX_OT 5
-#define OUT_IDX_BZ 6
-
 #define PORT_NUM_A 0
 #define PORT_NUM_B 1
 #define PORT_NUM_C 2

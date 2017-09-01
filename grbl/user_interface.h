@@ -15,6 +15,15 @@
 #define BTN_IDX_LM 8
 #define BTN_IDX_SP 9
 
+// index into array of digital outputs
+#define OUT_IDX_UP 0
+#define OUT_IDX_DN 1
+#define OUT_IDX_LF 2
+#define OUT_IDX_RT 3
+#define OUT_IDX_IN 4
+#define OUT_IDX_OT 5
+#define OUT_IDX_BZ 6
+
 // initialize user interface
 void ui_init();
 
@@ -25,6 +34,8 @@ void ui_service();
 void ui_watchDogInit();
 
 void ui_handleEStop();
+
+void ui_handleSpindleThermalShutdown();
 
 // null out the buffer before building new line
 void ui_clearJogCommand();
