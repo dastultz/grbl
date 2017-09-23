@@ -150,10 +150,6 @@ void ui_handleDiscreteJog() {
 
     uint8_t result = grbl_api_executeJog(jogCommand);
 
-    printString(jogCommand);
-    printString(":");
-    print_uint8_base10(result);
-    printString("\r\n");
     // todo: if result != 0 start beep cycle
   }
 }
@@ -199,9 +195,9 @@ void ui_sendContinuousJog() {
     case 0: strcat(jogCommand, "50"); break;
     case 1: strcat(jogCommand, "101"); break;
     case 2: strcat(jogCommand, "254"); break;
-    case 3: strcat(jogCommand, "381"); break;
-    case 4: strcat(jogCommand, "508"); break;
-    case 5: strcat(jogCommand, "635"); break;
+    case 3: strcat(jogCommand, "304"); break;
+    case 4: strcat(jogCommand, "381"); break;
+    case 5: strcat(jogCommand, "457"); break;
   }
   uint8_t result = grbl_api_executeJog(jogCommand);
 
