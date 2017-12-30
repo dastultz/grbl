@@ -184,7 +184,7 @@
   // (not used on KFMC)
   #define STEPPERS_DISABLE_DDR    DDRB
   #define STEPPERS_DISABLE_PORT   PORTB
-  #define STEPPERS_DISABLE_BIT    0  // Uno Digital Pin 8
+  #define STEPPERS_DISABLE_BIT    0
   #define STEPPERS_DISABLE_MASK   (1<<STEPPERS_DISABLE_BIT)
 
   // Define homing/hard limit switch input pins and limit interrupt vectors.
@@ -192,13 +192,14 @@
   #define LIMIT_DDR        DDRC
   #define LIMIT_PIN        PINC
   #define LIMIT_PORT       PORTC
-  #define X_LIMIT_BIT      7
-  #define Y_LIMIT_BIT      7
-  #define Z_LIMIT_BIT      7
-  #define LIMIT_MASK       ((1<<X_LIMIT_BIT)|(1<<Y_LIMIT_BIT)|(1<<Z_LIMIT_BIT)) // All limit bits
-  #define LIMIT_INT        PCIE0  // Pin change interrupt enable pin
-  #define LIMIT_INT_vect   PCINT0_vect
-  #define LIMIT_PCMSK      PCMSK0 // Pin change interrupt register
+  #define X_LIMIT_BIT      7 // all limits, Sanguino PC7
+  // limits.c says not to attach e-stop to limit pins, but I don't home and e-stop interrupts power to stepper driver
+  #define Y_LIMIT_BIT      6 // e-stop, Sanguino PC6
+  #define Z_LIMIT_BIT      0 // unused
+  #define LIMIT_MASK       ((1<<X_LIMIT_BIT)|(1<<Y_LIMIT_BIT))
+  #define LIMIT_INT        PCIE2  // Pin change interrupt enable pin
+  #define LIMIT_INT_vect   PCINT2_vect
+  #define LIMIT_PCMSK      PCMSK2 // Pin change interrupt register
 
   // Define spindle enable and spindle direction output pins.
   #define SPINDLE_ENABLE_DDR    DDRB
@@ -207,48 +208,48 @@
   #ifdef VARIABLE_SPINDLE
     #ifdef USE_SPINDLE_DIR_AS_ENABLE_PIN
       // If enabled, spindle direction pin now used as spindle enable, while PWM remains on D11.
-      #define SPINDLE_ENABLE_BIT    5  // Uno Digital Pin 13 (NOTE: D13 can't be pulled-high input due to LED.)
+      #define SPINDLE_ENABLE_BIT    0
     #else
-      #define SPINDLE_ENABLE_BIT    3  // Uno Digital Pin 11
+      #define SPINDLE_ENABLE_BIT    0
     #endif
   #else
-    #define SPINDLE_ENABLE_BIT    4  // Uno Digital Pin 12
+    #define SPINDLE_ENABLE_BIT    0
   #endif
   #ifndef USE_SPINDLE_DIR_AS_ENABLE_PIN
     #define SPINDLE_DIRECTION_DDR   DDRB
     #define SPINDLE_DIRECTION_PORT  PORTB
-    #define SPINDLE_DIRECTION_BIT   5  // Uno Digital Pin 13 (NOTE: D13 can't be pulled-high input due to LED.)
+    #define SPINDLE_DIRECTION_BIT   0
   #endif
 
   // Define flood and mist coolant enable output pins.
   #define COOLANT_FLOOD_DDR   DDRC
   #define COOLANT_FLOOD_PORT  PORTC
-  #define COOLANT_FLOOD_BIT   3  // Uno Analog Pin 3
+  #define COOLANT_FLOOD_BIT   0
   #define COOLANT_MIST_DDR   DDRC
   #define COOLANT_MIST_PORT  PORTC
-  #define COOLANT_MIST_BIT   4  // Uno Analog Pin 4
+  #define COOLANT_MIST_BIT   0
 
   // Define user-control controls (cycle start, reset, feed hold) input pins.
   // NOTE: All CONTROLs pins must be on the same port and not on a port with other input pins (limits).
-  #define CONTROL_DDR       DDRC
-  #define CONTROL_PIN       PINC
-  #define CONTROL_PORT      PORTC
-  #define CONTROL_RESET_BIT         6  // Sangino pin 22
-  #define CONTROL_FEED_HOLD_BIT     1  // Uno Analog Pin 1
-  #define CONTROL_CYCLE_START_BIT   2  // Uno Analog Pin 2
-  #define CONTROL_SAFETY_DOOR_BIT   1  // Uno Analog Pin 1 NOTE: Safety door is shared with feed hold. Enabled by config define.
-  #define CONTROL_INT       PCIE1  // Pin change interrupt enable pin
-  #define CONTROL_INT_vect  PCINT1_vect
-  #define CONTROL_PCMSK     PCMSK1 // Pin change interrupt register
-  #define CONTROL_MASK      ((1<<CONTROL_RESET_BIT)|(1<<CONTROL_FEED_HOLD_BIT)|(1<<CONTROL_CYCLE_START_BIT)|(1<<CONTROL_SAFETY_DOOR_BIT))
-  #define CONTROL_INVERT_MASK   CONTROL_MASK // May be re-defined to only invert certain control pins.
+  #define CONTROL_DDR       DDRA
+  #define CONTROL_PIN       PINA
+  #define CONTROL_PORT      PORTA
+  #define CONTROL_RESET_BIT         2 // unused
+  #define CONTROL_FEED_HOLD_BIT     3 // unused
+  #define CONTROL_CYCLE_START_BIT   4 // unused
+  #define CONTROL_SAFETY_DOOR_BIT   0
+  #define CONTROL_INT       PCIE0  // Pin change interrupt enable pin
+  #define CONTROL_INT_vect  PCINT0_vect
+  #define CONTROL_PCMSK     PCMSK0 // Pin change interrupt register
+  //#define CONTROL_MASK      ((1<<CONTROL_RESET_BIT)|(1<<CONTROL_FEED_HOLD_BIT)|(1<<CONTROL_CYCLE_START_BIT)|(1<<CONTROL_SAFETY_DOOR_BIT))
+  #define CONTROL_MASK      ((1<<CONTROL_SAFETY_DOOR_BIT))
 
   // Define probe switch input pin.
   #define PROBE_DDR       DDRC
   #define PROBE_PIN       PINC
   #define PROBE_PORT      PORTC
-  #define PROBE_BIT       5  // Uno Analog Pin 5
-  #define PROBE_MASK      (1<<PROBE_BIT)
+  #define PROBE_BIT       0 // unused
+  #define PROBE_MASK      0 // (1<<PROBE_BIT)
 
   // Variable spindle configuration below. Do not change unless you know what you are doing.
   // NOTE: Only used when variable spindle is enabled.
@@ -273,7 +274,7 @@
   // NOTE: On the 328p, these must be the same as the SPINDLE_ENABLE settings.
   #define SPINDLE_PWM_DDR	  DDRB
   #define SPINDLE_PWM_PORT  PORTB
-  #define SPINDLE_PWM_BIT	  3    // Uno Digital Pin 11
+  #define SPINDLE_PWM_BIT	  0
 
 #endif
 
