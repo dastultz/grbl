@@ -11,9 +11,7 @@
 #define BTN_IDX_IN 4
 #define BTN_IDX_OT 5
 #define BTN_IDX_TH 6
-#define BTN_IDX_ES 7
-#define BTN_IDX_LM 8
-#define BTN_IDX_SP 9
+#define BTN_IDX_SP 7
 
 // index into array of digital outputs
 #define OUT_IDX_UP 0
@@ -27,13 +25,11 @@
 // initialize user interface
 void ui_init();
 
-// service the user interface (pot, buttons, lights)
+// called from main loop, update lights and continuous jog
 void ui_service();
 
-// initialize watchdog timer used for servicing inputs during cycle
-void ui_watchDogInit();
-
-void ui_handleEStop();
+// respond to digital input changes from interrupt
+void ui_handleInputChange();
 
 void ui_handleSpindleThermalShutdown();
 

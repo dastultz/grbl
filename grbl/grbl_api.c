@@ -1,15 +1,5 @@
 #include "grbl_api.h"
 
-void grbl_api_e_stop() {
-  mc_reset();
-  // todo: system_set_exec_alarm(EXEC_ALARM_HARD_LIMIT); ??
-}
-
-void grbl_clear_alarm() {
-  // todo: this does not reset UGS
-  system_clear_exec_alarm();
-}
-
 void grbl_api_feed_override_reset() {
   system_set_exec_motion_override_flag(EXEC_FEED_OVR_RESET);
 }

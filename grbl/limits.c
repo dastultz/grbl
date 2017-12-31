@@ -32,7 +32,7 @@
 
 void limits_init()
 {
-  /*LIMIT_DDR &= ~(LIMIT_MASK); // Set as input pins
+  LIMIT_DDR &= ~(LIMIT_MASK); // Set as input pins
 
   #ifdef DISABLE_LIMIT_PIN_PULL_UP
     LIMIT_PORT &= ~(LIMIT_MASK); // Normal low operation. Requires external pull-down.
@@ -51,15 +51,15 @@ void limits_init()
     MCUSR &= ~(1<<WDRF);
     WDTCSR |= (1<<WDCE) | (1<<WDE);
     WDTCSR = (1<<WDP0); // Set time-out at ~32msec.
-  #endif*/
+  #endif
 }
 
 
 // Disables hard limits.
 void limits_disable()
 {
-  /*LIMIT_PCMSK &= ~LIMIT_MASK;  // Disable specific pins of the Pin Change Interrupt
-  PCICR &= ~(1 << LIMIT_INT);  // Disable Pin Change Interrupt*/
+  LIMIT_PCMSK &= ~LIMIT_MASK;  // Disable specific pins of the Pin Change Interrupt
+  PCICR &= ~(1 << LIMIT_INT);  // Disable Pin Change Interrupt
 }
 
 
@@ -121,9 +121,15 @@ uint8_t limits_get_state()
 #else // OPTIONAL: Software debounce limit pin routine.
   // Upon limit pin change, enable watchdog timer to create a short delay. 
   ISR(LIMIT_INT_vect) { if (!(WDTCSR & (1<<WDIE))) { WDTCSR |= (1<<WDIE); } }
+  // kfmc: have control also debounced
+  ISR(CONTROL_INT_vect) { if (!(WDTCSR & (1<<WDIE))) { WDTCSR |= (1<<WDIE); } }
+  // kfmc: one other button, also debounced
+  ISR(PCINT3_vect) { if (!(WDTCSR & (1<<WDIE))) { WDTCSR |= (1<<WDIE); } }
+
+  // kfmc: this now handles all pin interrupts with debounce
   ISR(WDT_vect) // Watchdog timer ISR
   {
-    WDTCSR &= ~(1<<WDIE); // Disable watchdog timer. 
+    WDTCSR &= ~(1<<WDIE); // Disable watchdog timer.
     if (sys.state != STATE_ALARM) {  // Ignore if already in alarm state. 
       if (!(sys_rt_exec_alarm)) {
         // Check limit pin state. 
@@ -131,8 +137,12 @@ uint8_t limits_get_state()
           mc_reset(); // Initiate system kill.
           system_set_exec_alarm(EXEC_ALARM_HARD_LIMIT); // Indicate hard limit critical event
         }
-      }  
+      }
     }
+    // kfmc: call former control ISR
+    system_handleControlChange();
+    // kfmc: handle jog/overrides/buzzer
+    ui_handleInputChange();
   }
 #endif
 

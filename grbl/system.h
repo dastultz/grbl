@@ -204,5 +204,7 @@ void system_set_exec_accessory_override_flag(uint8_t mask);
 void system_clear_exec_motion_overrides();
 void system_clear_exec_accessory_overrides();
 
+// kfmc: repurpose control ISR
+void system_handleControlChange();
 
 #endif

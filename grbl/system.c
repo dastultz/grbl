@@ -60,7 +60,9 @@ uint8_t system_control_get_state()
 // only the realtime command execute variable to have the main program execute these when
 // its ready. This works exactly like the character-based realtime commands when picked off
 // directly from the incoming serial data stream.
-ISR(CONTROL_INT_vect)
+// ISR(CONTROL_INT_vect)
+// kfmc: called from Watch Dog software debounce interrupt in limits.c
+void system_handleControlChange()
 {
   uint8_t pin = system_control_get_state();
   if (pin) {

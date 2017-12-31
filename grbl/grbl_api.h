@@ -6,8 +6,6 @@
 /*
 Functions for interfacing with GRBL
 */
-void grbl_api_e_stop();
-
 void grbl_api_feed_override_reset();
 
 void grbl_api_feed_override_coarse_plus();

@@ -22,72 +22,59 @@ uint8_t activeContinuousButton = 0;
 void ui_init() {
   input_init();
   output_init();
-  ui_watchDogInit();
 }
 
-void ui_watchDogInit() {
-  // Clear reset, we can not clear WDE if WDRF is set
-  MCUSR &= ~(1<<WDRF);
-  cli(); // disable interrupts so we do not get interrupted while doing timed sequence
-  // First step of timed sequence, we have 4 cycles after this to make changes to WDE and WD timeout
-  WDTCSR |= (1<<WDCE) | (1<<WDE);
-  // disable reset mode and set prescaler in one operation
-  WDTCSR = 0; // 15ms timeout, about 66Hz
-  sei(); // enable global interrupts
-  WDTCSR |= _BV(WDIE); // enable watchdog interrupt only mode
-}
+// this is an interrupt routine
+// "edge" test on digital inputs will work in this "thread"
+void ui_handleInputChange() {
 
-// when running a cycle, this handles I/O
-ISR(WDT_vect) { // Watchdog timer ISR
-  if (grbl_api_running() || grbl_api_holding()) {
-    input_service();
-    ui_handleEStop();
-    ui_handleSpindleThermalShutdown();
-    if (grbl_api_running()) {
-      ui_handleOverride();
-      ui_handlePause();
-    } else if (grbl_api_holding()) {
-      ui_handleUnpause();
-    }
-    output_clearAllLights();
-    output_service();
+  input_readDigital();
+  ui_handleSpindleThermalShutdown();
+
+  if (grbl_api_running()) {
+    ui_handleOverride();
+    ui_handlePause();
+  } else if (grbl_api_holding()) {
+    ui_handleUnpause();
   }
-}
 
-void ui_service() {
   if (grbl_api_idle() || grbl_api_jogging()) {
-    input_service();
-    ui_handleSpindleThermalShutdown();
     if (mode == MODE_DISCRETE) {
       ui_handleDiscreteJog();
       if (input_edgeHigh(BTN_IDX_TH)) {
         mode = MODE_CONTINUOUS;
-        output_clearAllLights();
       }
     } else { // MODE_CONTINUOUS
+      ui_handleContinuousJogStart();
       if (grbl_api_jogging()) {
-        if (! grbl_api_planner_full()) {
-          ui_sendContinuousJog();
-        }
         ui_handleContinuousJogEnd();
-      } else {
-        ui_handleContinuousJogStart();
-        if (input_edgeHigh(BTN_IDX_TH)) {
-          mode = MODE_DISCRETE;
-        }
+      } else if (input_edgeHigh(BTN_IDX_TH)) {
+        mode = MODE_DISCRETE;
       }
     }
-    output_service();
   }
+  output_service();
+  input_clear();
 }
 
-void ui_handleEStop() {
-  if (input_edgeHigh(BTN_IDX_ES)) {
-    mc_reset(); // todo: move this out to grbl_api
+// this is called from the main loop
+// "edge" tests on digital inputs don't work in this "thread"!
+void ui_service() {
+  if (grbl_api_running() || mode == MODE_CONTINUOUS) {
+    output_clearAllLights();
+  } if (grbl_api_idle() || grbl_api_jogging()) {
+    input_readAnalog();
+    if (mode == MODE_DISCRETE) {
+      // pair lights with throttle position
+      output_exclusiveLightOn(input_throttlePosition());
+    }
+    if (mode == MODE_CONTINUOUS
+      && grbl_api_jogging()
+      && (! grbl_api_planner_full())) {
+          ui_sendContinuousJog();
+     }
   }
-  if (input_edgeLow(BTN_IDX_ES)) {
-    grbl_clear_alarm();
-  }
+  output_service();
 }
 
 void ui_handleSpindleThermalShutdown() {
@@ -120,8 +107,6 @@ void ui_handleUnpause() {
 }
 
 void ui_handleDiscreteJog() {
-  // pair lights with throttle position
-  output_exclusiveLightOn(input_throttlePosition());
 
   ui_initAxisAction();
 
@@ -199,9 +184,12 @@ void ui_sendContinuousJog() {
     case 4: strcat(jogCommand, "381"); break;
     case 5: strcat(jogCommand, "457"); break;
   }
-  uint8_t result = grbl_api_executeJog(jogCommand);
+  // confirm active button is still active as late as possible
+  // we may have gotten a release event while this function was running
+  if (input_high(activeContinuousButton)) {
+    uint8_t result = grbl_api_executeJog(jogCommand);
+  }
 
-  // todo: if result != 0 start beep cycle
 }
 
 void ui_initAxisAction() {

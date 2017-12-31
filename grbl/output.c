@@ -13,13 +13,13 @@ uint8_t outputStates[] = { 0, 0, 0, 0, 0, 0, 0 };
 void output_init() {
 
   // configure outputs, set bits to 1
-  DDRA |= 1 << PA1; // BUZZER
-  DDRB |= 1 << PB7; // IN
-  DDRD |= 1 << PD6; // RIGHT
-  DDRD |= 1 << PD5; // OUT
-  DDRD |= 1 << PD4; // LEFT
-  DDRD |= 1 << PD3; // DN
-  DDRD |= 1 << PD2; // UP
+  bit_true(DDRD, bit(PD2)); // UP
+  bit_true(DDRD, bit(PD3)); // DN
+  bit_true(DDRD, bit(PD4)); // LEFT
+  bit_true(DDRD, bit(PD6)); // RIGHT
+  bit_true(DDRB, bit(PB7)); // IN
+  bit_true(DDRD, bit(PD5)); // OUT
+  bit_true(DDRA, bit(PA1)); // BUZZER
 
   // set up ports
   outputStates[OUT_IDX_UP] |= PORT_NUM_D << 2;
