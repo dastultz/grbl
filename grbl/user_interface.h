@@ -54,8 +54,8 @@ void ui_handleContinuousJogStart();
 // cancel a continuous jog command if requested
 void ui_handleContinuousJogEnd();
 
-// axis button action taken
-void ui_initAxisAction();
+// prepare jog button action to be taken
+void ui_initJogAction();
 
 // send continuous jog move
 void ui_sendContinuousJog();
