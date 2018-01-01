@@ -194,7 +194,8 @@
 // NOTE: The top option will mask and invert all control pins. The bottom option is an example of
 // inverting only two control pins, the safety door and reset. See cpu_map.h for other bit definitions.
 // #define INVERT_CONTROL_PIN_MASK CONTROL_MASK // Default disabled. Uncomment to disable.
-// #define INVERT_CONTROL_PIN_MASK ((1<<CONTROL_SAFETY_DOOR_BIT)|(CONTROL_RESET_BIT)) // Default disabled.
+// kfmc: invert pins I'm not interested in because they will be tested against false for activated
+#define INVERT_CONTROL_PIN_MASK ((1<<CONTROL_RESET_BIT)|(1<<CONTROL_FEED_HOLD_BIT)|(1<<CONTROL_CYCLE_START_BIT)|(1<<CONTROL_SAFETY_DOOR_BIT))
 
 // Inverts select limit pin states based on the following mask. This effects all limit pin functions,
 // such as hard limits and homing. However, this is different from overall invert limits setting.
